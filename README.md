@@ -1,4 +1,4 @@
-# `is-ial-parser` — Универсальный парсер IAL для экосистемы Jekyll
+# `is-ial-parser` — Универсальный парсер IAL для экосистемы Jekyll
 
 [![Ruby](https://img.shields.io/badge/ruby-%203.0+-red.svg)](https://www.ruby-lang.org/)
 [![Gem Version](https://badge.fury.io/rb/is-ial-parser.svg)](https://badge.fury.io/rb/is-ial-parser)
