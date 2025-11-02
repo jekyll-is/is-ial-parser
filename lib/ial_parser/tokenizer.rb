@@ -5,7 +5,17 @@ require_relative 'errors'
 
 module IALParser
   class Tokenizer
-    Token = Struct.new(:raw, :position)
+    Token = Struct.new(:raw, :position, :quoted?, :quote_type) do
+      def inspect
+        "#<Token raw=#{raw.inspect}, pos=#{position}, quoted?=#{quoted?}, quote=#{quote_type}>"
+      end
+    end
+
+    QUOTE_TYPES = {
+      '"' => :double,
+      "'" => :single,
+      "`" => :backtick
+    }.freeze
 
     class << self
       def tokenize(string, strict: false)
@@ -17,8 +27,8 @@ module IALParser
           i = skip_whitespace(string, i)
           break if i >= len
 
-          raw, new_i = extract_token(string, i, strict: strict)
-          tokens << Token.new(raw, i)
+          raw, new_i, quoted, quote_type = extract_token(string, i, strict: strict)
+          tokens << Token.new(raw, i, quoted, quote_type)
           i = new_i
         end
 
@@ -37,7 +47,9 @@ module IALParser
         buffer = +''
         in_quotes = false
         quote_char = nil
+        quote_type = nil
         escaped = false
+        quote_start_pos = start
 
         while i < str.length
           char = str[i]
@@ -56,16 +68,18 @@ module IALParser
             next
           end
 
-          if QUOTES.include?(char)
+          if QUOTE_TYPES.key?(char)
             if in_quotes && char == quote_char
               buffer << char
               in_quotes = false
-              quote_char = nil
+              # quote_char НЕ сбрасываем — нужен для проверки
               i += 1
             elsif !in_quotes
               buffer << char
               in_quotes = true
               quote_char = char
+              quote_type = QUOTE_TYPES[char]
+              quote_start_pos = i
               i += 1
             else
               buffer << char
@@ -79,22 +93,21 @@ module IALParser
           end
         end
 
-        # Проверка незакрытой кавычки
+        # Ошибки
         if in_quotes
-          msg = "Unterminated quote starting near position #{start}"
+          msg = "Unterminated quote starting at position #{quote_start_pos}"
           raise UnterminatedQuoteError, msg if strict
         end
 
-        # Проверка экранирования в конце
         if escaped
-          msg = "Escape at end of token, position #{i - 1}"
+          msg = "Escape sequence at end of token, position #{i - 1}"
           raise EscapeAtEndError, msg if strict
         end
 
-        [buffer, i]
-      end
+        quoted = !!quote_type
 
-      QUOTES = %w[" ' `].freeze
+        [buffer, i, quoted, quote_type]
+      end
     end
   end
 end
