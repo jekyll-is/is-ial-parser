@@ -1,0 +1,53 @@
+# Ruby / Bundler
+/.bundle
+/vendor
+*.rbc
+/.config
+/coverage/
+/InstalledFiles
+/pkg/
+/spec/reports/
+/spec/tmp/
+*.bundle
+*.so
+*.o
+*.a
+.mkmf.log
+
+# RSpec
+/spec/examples.txt
+/.rspec_status
+
+# SimpleCov
+coverage/
+
+# Compiled gems
+*.gem
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.project
+.idea/
+.vscode/
+*.iml
+
+# Logs
+*.log
+log/*
+tmp/*
+
+# Local environment
+.env
+.ruby-version
+.ruby-gemset
+
+# Documentation
+/doc/
+/rdoc/
+
+# Build
+/dist/
+/build/
