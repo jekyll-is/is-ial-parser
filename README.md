@@ -1,180 +1,149 @@
-# `is-ial-parser` — Универсальный парсер IAL для экосистемы Jekyll
+# is-ial-parser
 
-[![Ruby](https://img.shields.io/badge/ruby-%203.0+-red.svg)](https://www.ruby-lang.org/)
-[![Gem Version](https://badge.fury.io/rb/is-ial-parser.svg)](https://badge.fury.io/rb/is-ial-parser)
-[![Tests](https://github.com/jekyll-is/is-ial-parser/actions/workflows/ruby.yml/badge.svg)](https://github.com/jekyll-is/is-ial-parser/actions/workflows/ruby.yml)
-[![License: MIT](https://img.shields.io/badge/license-GPLv3-orange.svg)](LICENSE)
+**Универсальный парсер Inline Attribute Lists (IAL) для Kramdown и Jekyll-плагинов**  
+*Версия 1.0 – концепция и реализация*  
+*Лицензия: GNU GPLv3*  
 
 ---
 
-## Что это?
+## 1. Почему нужен отдельный парсер IAL?
 
-**`is-ial-parser`** — **единый, переиспользуемый парсер** для **Inline Attribute Lists (IAL)** в экосистеме Jekyll-плагинов.
+* **Единый парсер для всех плагинов** – `jekyll-is-span`, `jekyll-is-index`, `jekyll-is-tocs` и др. используют одну и ту же логику разбора.  
+* **Поддержка расширений** – `ext:val`, вложенные `ext:key=val`, спец-значения (`@"…"`, `!val`).  
+* **Безопасность** – строгий режим (`strict: true`) и валидация на этапе парсинга.  
+* **Независимость** – гем **не зависит** от Jekyll, работает в любых Ruby-проектах с Kramdown-AST.
 
-Он **не зависит от Jekyll**, **не парсит Markdown**, а работает **только с сырой IAL-строкой** из Kramdown AST:
+---
 
-```ruby
-[:ial, "{.term #def1 index:ООП @\"Глава 1\"}"]
-```
+## 2. Что парсит?
 
-→ превращает её в **структурированный хэш**:
+| Синтаксис | Пример | Результат (Ruby-hash) |
+|-----------|--------|-----------------------|
+| `.class` | `.term .hl` | `class: ["term", "hl"]` |
+| `#id` | `#def1` | `id: "def1"` |
+| `key=value` | `data-x=1` | `"data-x": "1"` |
+| `key="value"` | `title="Hello world"` | `title: "Hello world"` |
+| `ext:val` | `index:ООП` | `extensions: { index: "ООП" }` |
+| `ext:key=val` | `abbr:API=Application Programming Interface` | `extensions: { abbr: { API: "Application Programming Interface" } }` |
+| Флаг | `hidden` | `hidden: "true"` |
+| Спец-значения | `@"Chapter 1"` | `"@": "Chapter 1"` |
+| Спец-значения | `!draft` | `"!": "draft"` |
+
+**Полный список спец-префиксов** (настраивается): `@`, `!`, `$`, `^`, `&`, `*`, `+`, `~`.
+
+---
+
+## 3. Формат возвращаемого хэша
 
 ```ruby
 {
-  attrs: { class: ["term"], id: "def1", "@": "Глава 1" },
-  extensions: { index: "ООП" },
-  meta: { "@": { quote: :double, interpolated: :ruby } }
+  attrs: {
+    class: ["term"],
+    id: "def1",
+    title: "Hello #{name}",
+    "@": "Chapter 1",
+    "!": "draft"
+  },
+  extensions: {
+    index: "ООП!#{page.section}",
+    abbr: { API: "Application Programming Interface" }
+  },
+  meta: {
+    title: { quote: :double, interpolated: :ruby },
+    "abbr.API": { quote: :none, interpolated: :none },
+    "@": { quote: :double, interpolated: :ruby }
+  },
+  warnings: []   # только в strict: false
 }
 ```
 
----
-
-## Зачем?
-
-| Проблема | Решение |
-|--------|--------|
-| **Дублирование парсинга IAL** в `jekyll-span`, `jekyll-figure`, `jekyll-og-meta` | Один гем → один источник правды |
-| **Ошибки на граничных случаях** (`@"..."`, `` `{{}}` ``, `ext:key=val`) | Тестируемый, строгий парсер |
-| **Невозможность расширения** | `extensions:` → `fig:src=...`, `index:keyword` |
-| **Отсутствие метаданных** | `meta:` → тип кавычек, интерполяция |
+*`meta`* хранит тип кавычек и тип интерполяции – **парсер не выполняет** интерполяцию, только помечает её.
 
 ---
 
-## Установка
+## 4. Конфигурация (через `_config.yml` или `IALParser.parse(..., options)`)
 
-```ruby
-# Gemfile
-gem 'is-ial-parser', '~> 1.0'
-```
-
-```bash
-bundle install
+```yaml
+ial_parser:
+  strict: false               # по умолчанию – совместимость с legacy
+  special_prefixes: ["@", "!", "$", "^", "&", "*", "+", "~"]
+  allow_unquoted_values: false
+  enable_ruby_interpolation: false   # только плагин решает
+  enable_liquid_interpolation: true
 ```
 
 ---
 
-## Использование
+## 5. Пример использования
 
 ```ruby
-require 'is_ial_parser'
+require "ial_parser"
 
-ial = '{.term #def1 title="Hello" index:ООП @\"Chapter 1\" !draft fig:src="img.jpg"}'
+ial = '{.term #def1 @"ООП: инкапсуляция" index:ООП!#{page.section} abbr:API=Application Programming Interface}'
+result = IALParser.parse(ial, strict: true)
 
-result = IS::IALParser.parse(ial)
-
-result.attrs        # → { class: ["term"], id: "def1", title: "Hello", "@": "Chapter 1", "!": "draft" }
-result.extensions   # → { index: "ООП", fig: { src: "img.jpg" } }
-result.meta         # → { title: { quote: :double, interpolated: :none }, "@": { quote: :double, interpolated: :ruby } }
-result.warnings     # → []
+pp result
+# => { attrs: { class: ["term"], id: "def1", "@": "ООП: инкапсуляция" },
+#      extensions: { index: "ООП!#{page.section}", abbr: { API: "Application Programming Interface" } },
+#      meta: { "@": { quote: :double, interpolated: :ruby },
+#              index: { quote: :double, interpolated: :ruby },
+#              "abbr.API": { quote: :none, interpolated: :none } },
+#      warnings: [] }
 ```
 
 ---
 
-## Поддерживаемые конструкции
-
-| Тип | Синтаксис | Результат |
-|-----|----------|---------|
-| Классы | `.term .hl` | `class: ["term", "hl"]` |
-| ID | `#def1` | `id: "def1"` |
-| Атрибуты | `key=val`, `key="val"` | `"key": "val"` |
-| Спецсимволы | `@"Chapter"`, `!draft`, `$100` | `"@": "Chapter"`, `"!": "draft"` |
-| Расширения | `index:ООП`, `fig:src=img.jpg` | `extensions: { index: "ООП", fig: { src: "img.jpg" } }` |
-| Liquid | ``key=`{{ var }}` `` | `meta: { interpolated: :liquid }` |
-| Ruby | `key="#{expr}"` | `meta: { interpolated: :ruby }` |
-
----
-
-## Конфигурация
+## 6. Интеграция с Kramdown-AST
 
 ```ruby
-IS::IALParser.configure do |config|
-  config.strict = true                    # Ошибки при дубликатах, пробелах
-  config.allow_unquoted_values = false    # Запретить `key=val` без кавычек
-  config.special_prefixes = ["@", "!", "$"] # Добавлять/убирать спецсимволы
-end
-```
-
-Или при вызове:
-
-```ruby
-IS::IALParser.parse(ial, strict: true)
-```
-
----
-
-## Интеграция с Jekyll-плагинами
-
-```ruby
-# В jekyll-span, jekyll-figure и др.
-Jekyll::Hooks.register [:pages, :documents], :pre_render do |doc|
+# В любом Jekyll-плагине
+Jekyll::Hooks.register [:pages, :documents], :pre_render do |doc, payload|
   tree = doc.instance_variable_get(:@kramdown_tree) or next
 
-  tree.elements.each do |node|
+  tree.traverse do |node|
     next unless node.type == :ial
-    raw_ial = node.value
-
-    parsed = IS::IALParser.parse(raw_ial)
-    # → используем parsed.attrs, parsed.extensions
+    parsed = IALParser.parse(node.value, strict: true)
+    # → используем parsed.attrs / parsed.extensions
   end
 end
 ```
 
 ---
 
-## Структура результата
+## 7. Тесты
 
-```ruby
-{
-  attrs:       Hash,      # Стандартные атрибуты (class, id, data-*, etc.)
-  extensions:  Hash,      # Расширения: index:, fig:, etc.
-  meta:        Hash,      # Метаданные: кавычки, интерполяция
-  warnings:    Array      # Только в strict: false
-}
-```
+* `test/fixtures/*.ial` – набор входных строк.  
+* `test/parser_test.rb` – 100 % покрытие (RSpec).  
+* Строгий режим проверяет дубли `#id` и неизвестные спец-префиксы (если не в `special_prefixes`).
 
 ---
 
-## Тестирование
-
-- **Minitest** + **100% покрытие**
-- **Фикстуры**: `test/fixtures/*.ial` → ожидаемый JSON
-- **CI**: Ruby 3.0–3.3
-
-```bash
-rake test
-```
-
----
-
-## Roadmap
+## 8. Roadmap
 
 | Версия | Задача |
-|-------|--------|
-| **v0.1** | Базовый парсер: классы, ID, атрибуты |
-| **v1.0** | Полная поддержка `ext:`, спецсимволов, `meta`, `strict` |
-| **v1.1** | Глобальная конфигурация |
-| **v2.0** | Опциональная интерполяция (Ruby/Liquid) с контекстом |
+|--------|--------|
+| **v1.0** | Базовый парсинг + `meta` + `extensions` |
+| **v1.1** | Поддержка `` `{{…}}` `` как `quote: :liquid` |
+| **v1.2** | Глобальная конфигурация + `strict` режим |
+| **v2.0** | Опциональная интерполяция через `context` (Ruby/Liquid) |
 
 ---
 
-## Совместимость
+## 9. Лицензия
 
-- **Ruby ≥ 3.0**
-- **Kramdown ≥ 2.3**
-- **Jekyll ≥ 4.0** (через плагины)
-- **GitHub Pages** — через Actions
+**GNU General Public License v3.0**  
+См. файл [`LICENSE`](LICENSE) (GPLv3).  
+*Код распространяется «как есть», без гарантий.*
 
 ---
 
-## Лицензия
+## 10. Вклад
 
-[MIT License](LICENSE)
+1. Форк → `feature/your-name`  
+2. `bundle install && bundle exec rspec`  
+3. Pull Request с описанием изменений.
 
-<!--
 ---
 
-## Авторы
-
-**Jekyll-IS Team**  
-`team@jekyll.is` | [jekyll.is](https://jekyll.is)
--->
+**Готово к реализации v1.0.**  
+Следующий шаг – написать `lib/ial_parser/parser.rb` и тесты.
