@@ -137,13 +137,9 @@ end
 
 ---
 
-## 10. Вклад
+## 10. Внести вклад
 
 1. Форк → `feature/your-name`  
 2. `bundle install && bundle exec rspec`  
 3. Pull Request с описанием изменений.
 
----
-
-**Готово к реализации v1.0.**  
-Следующий шаг – написать `lib/ial_parser/parser.rb` и тесты.
