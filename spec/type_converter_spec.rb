@@ -1,9 +1,6 @@
 # spec/type_converter_spec.rb
 
-require 'spec_helper'
-require 'ial_parser/tokenizer'
-require 'ial_parser/classifier'
-require 'ial_parser/type_converter'
+require_relative 'spec_helper'
 
 RSpec.describe IALParser::TypeConverter do
   let(:tokenizer) { IALParser::Tokenizer }

@@ -1,4 +1,5 @@
 # lib/ial_parser/type_converter.rb
+# frozen_string_literal: true
 
 module IALParser
   module TypeConverter
