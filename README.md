@@ -5,7 +5,10 @@
 
 Universal Inline Attribute List (IAL) parser for Kramdown and Jekyll plugins.
 
+[![GitHub License](https://img.shields.io/github/license/jekyll-is/is-ial-parser)](LICENSE)
 [![Gem Version](https://badge.fury.io/rb/is-ial-parser.svg?icon=si%3Arubygems)](https://badge.fury.io/rb/is-ial-parser)
+[![Ruby](https://github.com/jekyll-is/is-ial-parser/actions/workflows/ruby.yml/badge.svg)](https://github.com/jekyll-is/is-ial-parser/actions/workflows/ruby.yml)
+[![Issues](https://img.shields.io/github/issues/jekyll-is/is-ial-parser)](https://github.com/jekyll-is/is-ial-parser/issues)
 
 ## Version
 
