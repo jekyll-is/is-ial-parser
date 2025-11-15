@@ -27,7 +27,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.PERSONAL_TOKEN }}
         ref: ${{ github.head_ref }}
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
