@@ -1,4 +1,5 @@
-**[en]** | [[ru]](README-ru.md)
+| **EN** | [ru](README-ru.md) |
+|----------|----------|
 
 # is-ial-parser
 
