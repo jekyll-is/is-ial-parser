@@ -65,4 +65,5 @@ jobs:
         branch: main
         commit_user_name: github-actions
         commit_user_email: github-actions@github.com
+        token: ${{ secrets.GITHUB_TOKEN }}
 
