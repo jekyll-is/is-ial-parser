@@ -27,12 +27,40 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Set up Ruby
-    # To automatically get bug fixes and new Ruby versions for ruby/setup-ruby,
-    # change this to (see https://github.com/ruby/setup-ruby#versioning):
       uses: ruby/setup-ruby@v1
-    # uses: ruby/setup-ruby@55283cc23133118229fd3f97f9336ee23a179fcf # v1.146.0
       with:
         ruby-version: ${{ matrix.ruby-version }}
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
     - name: Run tests
       run: bundle exec rake
+    - name: Extract coverage percentage
+      id: coverage
+      run: |
+        COVERAGE=$(jq '.result.covered_percent' coverage/.last_run.json)
+        COVERAGE_ROUNDED=$(printf "%.0f" $COVERAGE)
+        echo "coverage=$COVERAGE_ROUNDED" >> $GITHUB_OUTPUT
+    - name: Generate badge SVG
+      id: badge
+      run: |
+        COLOR=green
+        if [ ${{ steps.coverage.outputs.coverage }} -lt 80 ]; then
+          COLOR=red
+        elif [ ${{ steps.coverage.outputs.coverage }} -lt 90 ]; then
+          COLOR=yellow
+        fi
+        echo "<?xml version=\"1.0\"?><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"20\">
+        <rect width=\"100\" height=\"20\" fill=\"#555\"/>
+        <rect x=\"37\" width=\"63\" height=\"20\" fill=\"$COLOR\"/>
+        <text x=\"19\" y=\"14\" fill=\"#fff\" font-family=\"Verdana\" font-size=\"11\">coverage</text>
+        <text x=\"70\" y=\"14\" fill=\"#fff\" font-family=\"Verdana\" font-size=\"11\">${{ steps.coverage.outputs.coverage }}%</text>
+        </svg>" > coverage-badge.svg
+        echo "badge_path=coverage-badge.svg" >> $GITHUB_OUTPUT
+    - name: Commit and push badge
+      uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: Update coverage badge to ${{ steps.coverage.outputs.coverage }}% [skip ci]
+        file_pattern: coverage-badge.svg
+        branch: main
+        author_name: github-actions
+        author_email: github-actions@github.com
+
