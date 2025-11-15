@@ -1,3 +1,6 @@
+| [en](README.md) | RU |
+|----------|----------|
+
 # is-ial-parser
 
 Универсальный парсер Inline Attribute Lists (IAL) для плагинов Kramdown и Jekyll.
