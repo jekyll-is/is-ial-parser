@@ -58,7 +58,7 @@ jobs:
         </svg>" > coverage-badge.svg
         echo "badge_path=coverage-badge.svg" >> $GITHUB_OUTPUT
     - name: Commit and push badge
-      uses: stefanzweifel/git-auto-commit-action@v4
+      uses: stefanzweifel/git-auto-commit-action@v7
       with:
         commit_message: Update coverage badge to ${{ steps.coverage.outputs.coverage }}% [skip ci]
         file_pattern: coverage-badge.svg
