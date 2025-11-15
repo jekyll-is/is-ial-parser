@@ -61,6 +61,6 @@ jobs:
         commit_message: Update coverage badge to ${{ steps.coverage.outputs.coverage }}% [skip ci]
         file_pattern: coverage-badge.svg
         branch: main
-        author_name: github-actions
-        author_email: github-actions@github.com
+        commit_user_name: github-actions
+        commit_user_email: github-actions@github.com
 
