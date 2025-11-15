@@ -12,7 +12,7 @@ module IALParser
 
       tokenize source, **options do |token, position, quoting|
         parsed = parse_token token, position, quoting, **options
-        append_token result, parsed, **options if token 
+        append_token result, parsed, **options if parsed
       end
 
       result
@@ -59,7 +59,7 @@ module IALParser
           target[:_quotes][token.key] << token.quotes
         else
           raise DuplicateValueError, "Duplicate value for attribute '#{token.key}'" if target.has_key?(token.key)
-          target[token.key] = target.value
+          target[token.key] = token.value
           if token.quotes
             target[:_quotes] ||= {}
             target[:_quotes][token.key] = token.quotes
@@ -80,7 +80,7 @@ module IALParser
           target[token.extension][token.key] = token.value
           if token.quotes
             target[:_quotes] ||= {}
-            target[:_quotes][xkey] = token.key
+            target[:_quotes][xkey] = token.quotes
           end
         end
       when :unknown
@@ -102,19 +102,21 @@ module IALParser
       special_prefixes = options[:special_prefixes] || []
       # multiple_values = options[:multiple_values] || []
 
+      if special_prefixes.include?(source[0])
+        quoting = shift_quoting quoting, 1
+        value, quotes = parse_value source[1..], quoting, unquote: unquote, unescape: unescape, convert_types: convert_types 
+        return Token::new type: :special, key: source[0].to_sym, value: value, quotes: quotes
+      end
+
       case source
       when /^#/
         quoting = shift_quoting quoting, 1
-        value, quotes = parse_value source, quoting, unquote: unquote, unescape: unescape, convert_types: convert_types        # FIXME: parameter list
+        value, quotes = parse_value source[1..], quoting, unquote: unquote, unescape: unescape, convert_types: convert_types      
         return Token::new type: :id, value: value, quotes: quotes
       when /^\./
         quoting = shift_quoting quoting, 1
-        value = parse_classes source[1..]      # FIXME: parameter list
+        value = parse_classes source[1..]      
         return Token::new type: :classes, value: value
-      when special_prefixes.include?(source[0])
-        quoting = shift_quoting quoting, 1
-        value, quotes = parse_value source[1..], quoting, unquote: unquote, unescape: unescape, convert_types: convert_types   # FIXME: parameter list
-        return Token::new type: :special, key: source[0].to_sym, value: value, quotes: quotes
       when /^[a-z_][a-z0-9_\-]*:/i
         colon_position = $~.end(0)
         extension = convert_key source[.. colon_position - 2]
@@ -136,8 +138,8 @@ module IALParser
         return Token::new type: :attribute, key: key, value: true
       else 
         if allow_unknown
-          value, quotes = parse_value source, quoting, unquote: unquote, unescape: unescape, convert_types: convert_types
-          return Token::new type: :unknown, key: :"", value: source, quotes
+          value, quotes = parse_value(source, quoting, unquote: unquote, unescape: unescape, convert_types: convert_types)
+          return Token::new(type: :unknown, key: :"", value: source, quotes: quotes)
         else
           msg = "Unknown parameter: #{ source.inspect } at #{ position }"
           if strict_mode
@@ -151,7 +153,7 @@ module IALParser
     end    
 
     def parse_classes source
-      source.split /\./
+      source.split(/\./)
     end
 
     def convert_key source
@@ -170,7 +172,7 @@ module IALParser
       raise QuotingError, "Multiple quoting is unsupported" if quoting.size > 1
       value = nil
       quotes = nil
-      if quoting.size = 1
+      if quoting.size == 1
         quote = quoting.first
         raise QuotingError, "Partial quoting is unsupported" if quote[1] != 0 || quote[2] != source.length - 1
 
@@ -184,7 +186,7 @@ module IALParser
         value = source
       end
 
-      value = unescape value if unescape && quotes != "'"
+      value = unescape value, quotes if unescape
       value = convert_value value if convert_types && !quotes
 
       [value, quotes]
@@ -250,7 +252,7 @@ module IALParser
     end
 
     def extract_token source, start, **options
-      special_prefixes = options[:special_prefixes] || []
+      # special_prefixes = options[:special_prefixes] || []
       strict_mode = !!options[:strict]
 
       buffer = +''
@@ -281,7 +283,7 @@ module IALParser
           if in_quotes && quote_char == ch
             buffer << ch
             in_quotes = false
-            quoting << [quote_char, quote_start, i]
+            quoting << [quote_char, quote_start-start, i-start]
             quote_start = nil
             quote_char = nil
             i += 1
