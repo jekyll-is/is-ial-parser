@@ -1,7 +1,7 @@
 # is-ial-parser.gemspec
 Gem::Specification.new do |s|
   s.name        = "is-ial-parser"
-  s.version     = "0.1.0"
+  s.version     = "0.8.0"
   s.summary     = "Universal IAL parser for Jekyll"
   s.description = "Parses Inline Attribute Lists with extensions, quotes, interpolation"
   s.authors     = ["Ivan Shikhalev"]
