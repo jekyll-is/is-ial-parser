@@ -1,4 +1,6 @@
-# is-ial-parser [[ru]](README-ru.md)
+**[en]** | [[ru]](README-ru.md)
+
+# is-ial-parser
 
 Universal Inline Attribute List (IAL) parser for Kramdown and Jekyll plugins.
 
