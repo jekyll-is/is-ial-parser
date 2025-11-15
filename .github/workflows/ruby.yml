@@ -36,7 +36,7 @@ jobs:
     - name: Extract coverage percentage
       id: coverage
       run: |
-        COVERAGE=$(jq '.result.covered_percent' coverage/.last_run.json)
+        COVERAGE=$(jq '.result.line' coverage/.last_run.json)
         COVERAGE_ROUNDED=$(printf "%.0f" $COVERAGE)
         echo "coverage=$COVERAGE_ROUNDED" >> $GITHUB_OUTPUT
     - name: Generate badge SVG
