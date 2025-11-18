@@ -18,6 +18,10 @@ module IALParser
       result
     end
 
+    def parse! source, context = ni, **options
+      # TODO: implement ruby interpolation between parse and append
+    end
+
     ESCAPE = "\\"
     QUOTES = Set['"', "'"]
     SPACES = /\s/
