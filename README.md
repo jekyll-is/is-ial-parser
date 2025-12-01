@@ -12,7 +12,7 @@ Universal Inline Attribute List (IAL) parser for Kramdown and Jekyll plugins.
 
 ## Version
 
-+ **0.8.0** — pre-release.
++ **0.8.1** — pre-release.
 
 ## Overview
 
