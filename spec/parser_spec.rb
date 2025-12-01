@@ -87,6 +87,29 @@ RSpec.describe IALParser do
       expect(result[:_quotes][:title]).to eq("'")
     end
 
+    it "Escaped quoted" do
+      source = 'title="text width (\") quote"'
+      result = IALParser.parse source
+      expect(result[:title]).to eq('text width (") quote')
+    end
+
+  end
+
+  describe ".parse!" do
+
+    it "Simple eval" do
+      source = 'num="#{ 2 + 3 }"'
+      result = IALParser.parse! source
+      expect(result[:num]).to eq('5')
+    end
+
+    it "Eval with binding" do
+      source = 'num="#{ 2 + localvar }"'
+      localvar = 3
+      result = IALParser.parse! source, binding
+      expect(result[:num]).to eq('5')
+    end
+
   end
 
 end

@@ -18,8 +18,23 @@ module IALParser
       result
     end
 
-    def parse! source, context = ni, **options
-      # TODO: implement ruby interpolation between parse and append
+    def parse! source, context = nil, **options
+      result = {}
+
+      tokenize source, **options do |token, position, quoting|
+        opts = options.merge preserve_quotes: true, preserve_escape: true
+        parsed = parse_token token, position, quoting, **opts
+        if parsed && parsed.type == :attribute && parsed.quotes == '"'
+          parsed.value = if Binding === context
+            context.eval parsed.value
+          else
+            context.instance_eval parsed.value
+          end
+        end
+        append_token result, parsed, **options if parsed
+      end
+
+      result
     end
 
     ESCAPE = "\\"
